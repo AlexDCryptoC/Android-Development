@@ -18,6 +18,7 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import com.parse.FindCallback;
+import com.parse.GetCallback;
 import com.parse.ParseException;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
@@ -27,6 +28,8 @@ import com.shashank.sony.fancytoastlib.FancyToast;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.parse.ParseUser.getCurrentUser;
 
 public class WhatsAppChatActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -57,11 +60,11 @@ public class WhatsAppChatActivity extends AppCompatActivity implements View.OnCl
             ParseQuery<ParseObject> firstUserChatQuery = ParseQuery.getQuery("Chat");
             ParseQuery<ParseObject> secondUserChatQuery = ParseQuery.getQuery("Chat");
 
-            firstUserChatQuery.whereEqualTo("waSender", ParseUser.getCurrentUser().getUsername());
+            firstUserChatQuery.whereEqualTo("waSender", getCurrentUser().getUsername());
             firstUserChatQuery.whereEqualTo("waTargetRecipient", selectedUser);
 
             secondUserChatQuery.whereEqualTo("waSender", selectedUser);
-            secondUserChatQuery.whereEqualTo("waTargetRecipient", ParseUser.getCurrentUser().getUsername());
+            secondUserChatQuery.whereEqualTo("waTargetRecipient", getCurrentUser().getUsername());
 
 
             ArrayList<ParseQuery<ParseObject>> allQueries = new ArrayList<>();
@@ -80,8 +83,8 @@ public class WhatsAppChatActivity extends AppCompatActivity implements View.OnCl
 
                             String waMessage = chatObject.get("waMessage") + "";
 
-                            if (chatObject.get("waSender").equals(ParseUser.getCurrentUser().getUsername())) {
-                                waMessage = ParseUser.getCurrentUser().getUsername() + ": " + waMessage;
+                            if (chatObject.get("waSender").equals(getCurrentUser().getUsername())) {
+                                waMessage = getCurrentUser().getUsername() + ": " + waMessage;
                             }
 
                             if (chatObject.get("waSender").equals(selectedUser)) {
@@ -123,24 +126,42 @@ public class WhatsAppChatActivity extends AppCompatActivity implements View.OnCl
 
         final EditText edtMessage = findViewById(R.id.edtSend);
 
+        // onCreate Object
         ParseObject chat = new ParseObject("Chat");
-        chat.put("waSender", ParseUser.getCurrentUser().getUsername());
+        chat.put("waSender", getCurrentUser().getUsername());
         chat.put("waTargetRecipient", selectedUser);
         chat.put("waMessage", edtMessage.getText().toString());
+
+        // onReading Object
+        ParseQuery<ParseObject> query = ParseQuery.getQuery("Chat");
+        query.getInBackground("<PARSE_OBJECT_ID>", new GetCallback<ParseObject>() {
+                    public void done(ParseObject result, ParseException e) {
+                        if (e == null) {
+                            System.out.println(result);
+                        } else {
+                            // something went wrong
+                        }
+                    }
+                });
+
+        Log.d(TAG, "somethingque " + selectedUser);
+
+
+
+
         chat.saveInBackground(new SaveCallback() {
             @Override
             public void done(ParseException e) {
                 if (e == null) {
 
 //                    FancyToast.makeText(WhatsAppChatActivity.this, "Message from " + ParseUser.getCurrentUser().getUsername() + " sent to " + selectedUser, Toast.LENGTH_SHORT, FancyToast.SUCCESS, true).show();
-                    chatsList.add(ParseUser.getCurrentUser().getUsername() + ": " + edtMessage.getText().toString());
+                    chatsList.add(getCurrentUser().getUsername() + ": " + edtMessage.getText().toString());
                     adapter.notifyDataSetChanged();
                     edtMessage.setText("");
                     scrollMyListViewToBottom();
                 }
             }
         });
-
     }
 
     @Override
